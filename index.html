@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PolyPhotos · Multi-Account Cloud Photo Orchestrator & Auto-Chaining Vault</title>
+  <meta name="description" content="Infinite free photo cloud storage orchestrator with smart threshold warnings, auto-account switching, and unified gallery timeline.">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              lime: '#ccff00',
+              cyan: '#38bdf8',
+              obsidian: '#050507',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" type="image/png" href="public/assets/logo.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+    
+    /* Theme Transition & CSS Variables */
+    :root {
+      --bg-main: #050507;
+      --bg-surface: #0b0d12;
+      --bg-card: #12151e;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+    }
+
+    html:not(.dark) {
+      --bg-main: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #f1f5f9;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-[#ccff00] selection:text-black">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 border-b border-white/5 dark:border-white/5 light:border-slate-200 bg-white/80 dark:bg-[#050507]/85 backdrop-blur-xl transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3.5">
+        <a href="../index.html" class="w-10 h-10 rounded-full bg-black border border-white/10 flex items-center justify-center overflow-hidden p-0.5 shadow-md">
+          <img src="public/assets/logo.png" alt="Velorio Labs" class="w-full h-full object-cover rounded-full">
+        </a>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-display font-bold text-lg tracking-wider text-slate-900 dark:text-white uppercase">PolyPhotos</h1>
+            <span class="text-[9px] font-mono bg-[#ccff00]/10 text-emerald-600 dark:text-[#ccff00] border border-emerald-500/30 dark:border-[#ccff00]/30 px-2 py-0.5 rounded-full font-bold">AUTO-CHAINING VAULT</span>
+          </div>
+          <p class="text-[10px] font-mono text-slate-500 dark:text-zinc-400">Multi-Account Cloud Storage Orchestrator</p>
+        </div>
+      </div>
+
+      <!-- Center: Unified Search -->
+      <div class="relative hidden md:block flex-1 max-w-md mx-6">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input type="text" id="photoSearchInput" placeholder="Search timeline by date, location, or linked account..." class="w-full bg-slate-100 dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 text-xs font-mono rounded-xl pl-9 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-[#ccff00] transition-colors">
+      </div>
+
+      <!-- Right Actions: Link Account + Theme Toggle -->
+      <div class="flex items-center gap-3">
+        <button id="addAccountBtn" class="bg-[#ccff00] hover:bg-[#b8e600] text-black font-mono font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-[#ccff00]/15 transition-all">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Link Account (+15GB)</span>
+        </button>
+
+        <button id="themeToggleBtn" class="bg-slate-100 dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 w-9 h-9 rounded-xl flex items-center justify-center text-xs transition-colors" title="Toggle Dark/Light Mode">
+          <i id="themeIcon" class="fa-solid fa-sun"></i>
+        </button>
+
+        <a href="../index.html" class="hidden sm:inline text-xs font-mono text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+          ← Hub
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- Proactive Storage Threshold Alert Banner (Dynamic) -->
+    <div id="thresholdAlertBanner" class="hidden rounded-2xl p-4.5 border transition-all">
+      <!-- Injected by JS when an account gets close to 1-2GB free -->
+    </div>
+
+    <!-- Storage Capacity Pool Overview Bar -->
+    <div class="bg-white dark:bg-[#080a0f] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 transition-colors">
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-[#ccff00] font-bold">// CLOUD POOL CAPACITY</div>
+          <h2 class="font-display text-2xl font-bold text-slate-900 dark:text-white mt-1">Multi-Account Storage Matrix</h2>
+          <p class="text-xs font-mono text-slate-500 dark:text-zinc-400 mt-0.5">
+            Auto-chains uploads to the next account when storage drops below <span class="font-semibold text-slate-900 dark:text-white">1.5 GB</span> remaining.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-mono">
+          <div class="bg-slate-100 dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 px-4 py-2 rounded-2xl text-right">
+            <div class="text-[10px] text-slate-500 dark:text-zinc-500 uppercase">TOTAL CLOUD POOL</div>
+            <div class="text-base font-bold text-slate-900 dark:text-white" id="totalPoolLabel">45.0 GB</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 px-4 py-2 rounded-2xl text-right">
+            <div class="text-[10px] text-slate-500 dark:text-zinc-500 uppercase">FREE CAPACITY</div>
+            <div class="text-base font-bold text-emerald-600 dark:text-[#ccff00]" id="freePoolLabel">29.1 GB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linked Accounts Meters Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="accountsGrid">
+        <!-- Injected by JS -->
+      </div>
+
+    </div>
+
+    <!-- Photo Upload Drag & Drop Zone -->
+    <div id="photoDropZone" class="border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-emerald-500 dark:hover:border-[#ccff00]/60 bg-white/50 dark:bg-[#080a0f]/60 rounded-3xl p-8 text-center transition-all cursor-pointer group">
+      <input type="file" id="fileInput" class="hidden" multiple accept="image/*">
+      <div class="flex flex-col items-center justify-center space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-white text-lg group-hover:scale-110 group-hover:border-emerald-500 dark:group-hover:border-[#ccff00] transition-all">
+          <i class="fa-solid fa-cloud-arrow-up text-emerald-600 dark:text-[#ccff00]"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Drag & drop photos to sync</h3>
+          <p class="text-xs text-slate-500 dark:text-zinc-400 font-mono mt-0.5">
+            or <span class="text-emerald-600 dark:text-[#ccff00] underline font-semibold">browse files</span> • Auto-routes to active non-full account
+          </p>
+        </div>
+        <div class="text-[11px] font-mono text-slate-400 dark:text-zinc-500">
+          Differential SHA-256 deduplication • Zero duplicate uploads • Original quality preserved
+        </div>
+      </div>
+    </div>
+
+    <!-- Unified Timeline Section -->
+    <div class="space-y-6">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/5">
+        <div>
+          <h3 class="font-display text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>Unified Photo Timeline</span>
+            <span id="photoCountBadge" class="text-xs font-mono bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 px-2.5 py-0.5 rounded-full">0 photos</span>
+          </h3>
+          <p class="text-xs font-mono text-slate-500 dark:text-zinc-400 mt-0.5">Seamlessly aggregated across all your linked Google / Cloud accounts.</p>
+        </div>
+
+        <!-- Filter Tags -->
+        <div class="flex items-center gap-2 font-mono text-xs" id="timelineFilters">
+          <button class="filter-timeline-btn active bg-slate-900 dark:bg-[#ccff00] text-white dark:text-black px-3 py-1.5 rounded-lg font-bold" data-filter="all">All Accounts</button>
+          <button class="filter-timeline-btn bg-slate-100 dark:bg-[#0b0d12] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10" data-filter="active">Current Active</button>
+        </div>
+      </div>
+
+      <!-- Photo Grid -->
+      <div id="photosGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <!-- Injected by JS -->
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Photo Lightbox Modal -->
+  <div id="lightboxModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl relative">
+      <button id="closeLightboxBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg z-10">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="grid grid-cols-1 md:grid-cols-3">
+        <div class="md:col-span-2 bg-black flex items-center justify-center min-h-[300px] max-h-[500px] overflow-hidden">
+          <img id="lightboxImg" src="" alt="Preview" class="max-h-full max-w-full object-contain">
+        </div>
+        <div class="p-6 space-y-4 font-mono text-xs text-slate-700 dark:text-zinc-300">
+          <h4 id="lightboxTitle" class="font-display text-lg font-bold text-slate-900 dark:text-white break-words">Photo</h4>
+          
+          <div class="space-y-2 border-t border-slate-200 dark:border-white/10 pt-3 text-[11px]">
+            <div><span class="text-slate-400">Date Taken:</span> <span id="lightboxDate" class="text-slate-900 dark:text-white font-semibold"></span></div>
+            <div><span class="text-slate-400">Backed Up To:</span> <span id="lightboxAccount" class="text-emerald-600 dark:text-[#ccff00] font-bold"></span></div>
+            <div><span class="text-slate-400">File Size:</span> <span id="lightboxSize" class="text-slate-900 dark:text-white"></span></div>
+            <div><span class="text-slate-400">SHA-256 Hash:</span> <span id="lightboxHash" class="text-[9px] text-slate-500 break-all block mt-0.5"></span></div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-200 dark:border-white/10">
+            <button id="offloadSingleBtn" class="w-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-white/10 px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-hard-drive"></i>
+              <span>Archive to Local PC</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link Account Modal -->
+  <div id="accountModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#0b0d12] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl relative">
+      <button id="closeAccountModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white text-base">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-[#ccff00] flex items-center justify-center text-xl">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+      </div>
+
+      <div>
+        <h3 class="font-display text-xl font-bold text-slate-900 dark:text-white">Link New Cloud Account</h3>
+        <p class="text-xs font-mono text-slate-500 dark:text-zinc-400 mt-1">Connect another Google account (+15GB) or cloud provider to expand your free storage pool.</p>
+      </div>
+
+      <form id="newAccountForm" class="space-y-4 font-mono text-xs">
+        <div>
+          <label class="block text-slate-600 dark:text-zinc-400 mb-1">Account Email / ID:</label>
+          <input type="email" id="accEmailInput" placeholder="e.g. backup.user2@gmail.com" required class="w-full bg-slate-50 dark:bg-[#050507] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-[#ccff00]">
+        </div>
+
+        <div>
+          <label class="block text-slate-600 dark:text-zinc-400 mb-1">Provider:</label>
+          <select id="accProviderInput" class="w-full bg-slate-50 dark:bg-[#050507] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-[#ccff00]">
+            <option value="Google Photos">Google Photos (15 GB Free)</option>
+            <option value="Google Drive">Google Drive (15 GB Free)</option>
+            <option value="Microsoft OneDrive">Microsoft OneDrive (5 GB Free)</option>
+            <option value="Local NAS / PC">Local Hard Drive (Unlimited)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-bold py-3 rounded-xl transition-all shadow-md">
+          Connect & Expand Pool (+15GB)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Industrial Footer -->
+  <footer class="border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#030405] py-8 text-center text-xs font-mono text-slate-500 dark:text-zinc-500 mt-auto transition-colors">
+    <p>POLYPHOTOS IS AN OPEN-SOURCE SYSTEM BY <a href="../index.html" class="text-emerald-600 dark:text-[#ccff00] hover:underline font-bold">VELORIO LABS</a>.</p>
+  </footer>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

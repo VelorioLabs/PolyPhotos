@@ -1,0 +1,27 @@
+{
+  "name": "polyphotos",
+  "version": "1.0.0",
+  "description": "Multi-Account Cloud Photo Backup & Auto-Chaining Storage Orchestrator",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "node tests/orchestrator.test.js"
+  },
+  "keywords": [
+    "google-photos",
+    "multi-account",
+    "cloud-storage",
+    "photo-backup",
+    "storage-orchestrator",
+    "infinite-storage",
+    "self-hosted",
+    "veloriolabs"
+  ],
+  "author": "Velorio Labs <gowdavarshan466@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.4.2"
+  }
+}

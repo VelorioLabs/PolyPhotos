@@ -1,0 +1,15 @@
+{
+  "appId": "com.veloriolabs.polyphotos",
+  "appName": "PolyPhotos",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#050507"
+    }
+  }
+}
